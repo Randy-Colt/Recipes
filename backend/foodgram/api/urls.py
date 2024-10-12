@@ -9,5 +9,6 @@ router.register('tags', views.TagViewSet)
 router.register('recipes', views.RecipeViewSet)
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('recipes/download_shopping_cart/', views.download_shopping_cart),
+    path('', include(router.urls)),
 ]
