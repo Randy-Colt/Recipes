@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -19,17 +18,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         model = Ingredient
         fields = '__all__'
         read_only_fields = '__all__',
-
-
-class Base64Serializer(serializers.ModelSerializer):
-    pass
-
-
-class MiniRecipeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
@@ -57,13 +45,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         exclude = 'pub_date',
 
     def get_is_favorited(self, obj):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         if user.is_authenticated:
             return Favorite.objects.filter(user=user, recipe=obj).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         if user.is_authenticated:
             return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
         return False
@@ -74,7 +62,6 @@ class IngredientRecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Ingredient.objects.all()
     )
     amount = serializers.IntegerField(write_only=True)
-
 
     class Meta:
         model = IngredientRecipe
@@ -98,25 +85,24 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         model = Recipe
         exclude = ('author', 'pub_date')
 
-    def _unique_validation(self, value, message):
-        value_list = []
-        for item in value:
-            if item in value_list:
-                raise serializers.ValidationError(message)
-            value_list.append(item)
-
-    def validate_ingredients(self, ingredients):
+    def validate(self, attrs):
+        ingredients = attrs.get('ingredients', False)
         if not ingredients:
             raise serializers.ValidationError(
-                'Убедитесь, что добавили ингридиент')
-        self._unique_validation(ingredients, 'Ингридиенты не могут повторяться')
-        return ingredients
+                'Убедитесь, что добавили ингридиент.')
+        tags = attrs.get('tags', False)
+        if not tags:
+            raise serializers.ValidationError('Убедитесь, что добавили тег.')
 
-    def validate_tags(self, tag):
-        if not tag:
-            raise serializers.ValidationError('Убедитесь, что добавили тег')
-        self._unique_validation(tag, 'Теги не могут повторяться')
-        return tag
+        ingredients_ids = [ingredient['id'] for ingredient in ingredients]
+        if len(ingredients_ids) != len(set(ingredients_ids)):
+            raise serializers.ValidationError(
+                'Убедитесь, что ингридиенты не повторяются.')
+
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError(
+                'Убедитесь, что теги не повторяются.')
+        return attrs
 
     def _create_ingredients(self, recipe, ingredients):
         IngredientRecipe.objects.bulk_create(
@@ -129,7 +115,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        user = self.context['request'].user
+        user = self.context.get('request').user
         recipe = Recipe.objects.create(author=user, **validated_data)
         recipe.tags.set(tags)
         self._create_ingredients(recipe, ingredients)
@@ -156,5 +142,4 @@ class ShortLinkSerializer(serializers.Serializer):
     short_link = serializers.CharField()
 
     def to_representation(self, instance):
-        url = f'{SITE_URL}/s/{instance}'
-        return {'short-link': url}
+        return {'short-link': f'{SITE_URL}/s/{instance}'}

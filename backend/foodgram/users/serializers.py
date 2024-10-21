@@ -1,48 +1,61 @@
-from rest_framework import serializers
+from drf_extra_fields.fields import Base64ImageField
+from rest_framework import serializers, status
+
+from api.minirecipe import MiniRecipeSerializer
+from foodgram.settings import SITE_URL
 from users.models import Subscription, User
 
 
 class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField()
 
     class Meta:
         model = User
         fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed')
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        if user.is_authenticated:
-            return Subscription.objects.filter(
-                user=user, author=obj).exists()
-        return False
+        return user.is_authenticated and Subscription.objects.filter(
+            user=user, author=obj).exists()
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(
-        read_only=True, default=serializers.CurrentUserDefault())
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField()
 
     class Meta:
-        model = Subscription
-        fields = ('author', 'user', )
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=['author', 'user', ]
-            )
-        ]
+        model = User
+        fields = 'avatar',
 
-    def create(self, validated_data):
-        return Subscription.objects.create(
-            user=self.context.get('request').user, **validated_data)
-
-    def validate_author(self, value):
-        if self.context.get('request').user == value:
+    def validate_avatar(self, value):
+        if not value:
             raise serializers.ValidationError(
-                'Нельзя подписаться на самого себя')
+                'Ни одного файла не было отправлено.')
         return value
+
+    def to_representation(self, instance):
+        return {'avatar': f'{SITE_URL}{instance.avatar.url}'}
+
+
+class SubscriptionSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = (
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'avatar',
+            'recipes', 'recipes_count')
+
+    def get_recipes(self, obj):
+        limit = self.context.get('request').query_params.get('recipes_count')
+        recipes = obj.recipes.all()
+        if limit:
+            recipes = recipes[:int(limit)]
+        serializer = MiniRecipeSerializer(recipes, many=True, read_only=True)
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()

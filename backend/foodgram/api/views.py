@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from api.favorite_shoppin_cart import post_or_delete
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
-    RecipeCreateSerializer, RecipeSerializer,
+    IngredientSerializer, RecipeCreateSerializer, RecipeSerializer,
     ShortLinkSerializer, TagSerializer)
 from recipes.models import (
     Favorite, Ingredient, IngredientRecipe,
@@ -19,9 +20,18 @@ from recipes.models import (
 User = get_user_model()
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    pagination_class = None
+    filter_backends = DjangoFilterBackend,
+    filter_classes = ''
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -66,16 +76,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_shopping_cart(request):
-    user = request.user
     try:
-        query_list = ShoppingCart.objects.filter(user=user)\
+        query_list = ShoppingCart.objects.filter(user=request.user)\
             .values('recipe__ingredients__name',
                     'recipe__ingredients__measurement_unit')\
             .annotate(amount_sum=Sum('recipe__recipe_ingredients__amount'))
     except ShoppingCart.DoesNotExist:
         return Response({'errors': 'Корзина пуста'},
-                        status=status.HTTP_400_BAD_REQUEST)
-    ingredients = 'Список покупок: \n'  # уверен, можно оптимизировать без строк
+                        status.HTTP_400_BAD_REQUEST)
+    # уверен, можно оптимизировать без строк
+    ingredients = 'Список покупок: \n'
     for item in query_list:
         ingredients += (
             f'{item["recipe__ingredients__name"]} - '
