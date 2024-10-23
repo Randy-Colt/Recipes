@@ -3,19 +3,19 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
-from api.favorite_shoppin_cart import post_or_delete
+from api.favorite_shopping_cart import post_or_delete
+from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     IngredientSerializer, RecipeCreateSerializer, RecipeSerializer,
     ShortLinkSerializer, TagSerializer)
 from recipes.models import (
-    Favorite, Ingredient, IngredientRecipe,
-    Recipe, ShoppingCart, ShortLinkConverter, Tag)
+    Favorite, Ingredient, Recipe, ShoppingCart, ShortLinkConverter, Tag)
 
 User = get_user_model()
 
@@ -31,19 +31,22 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     pagination_class = None
     filter_backends = DjangoFilterBackend,
-    filter_classes = ''
+    filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = IsAuthorOrReadOnly,
+    filter_backends = DjangoFilterBackend,
+    filterset_class = RecipeFilter
 
-    # def get_queryset(self):
-    #     queryset = recipes.Recipe.objects.select_related('author').prefetch_related(
-    #         'ingredientrecipe__ingredients', 'tags'
-    #     )
+    def get_queryset(self):
+        queryset = Recipe.objects.select_related('author')\
+            .prefetch_related(
+            'recipe_ingredients__ingredients', 'tags'
+        )
 
-    #     return queryset
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -55,8 +58,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path='get-link')
     def get_link(self, request, pk):
         """Получить короткую ссылку."""
-        recipe = self.get_object()
-        short_link = ShortLinkConverter.objects.get(recipe=recipe).short_link
+        short_link = get_object_or_404(
+            ShortLinkConverter, recipe=pk).short_link
         serializer = ShortLinkSerializer(short_link)
         return Response(serializer.data)
 
@@ -77,14 +80,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def download_shopping_cart(request):
     try:
-        query_list = ShoppingCart.objects.filter(user=request.user)\
+        query_list = request.user.shopping_list\
             .values('recipe__ingredients__name',
                     'recipe__ingredients__measurement_unit')\
             .annotate(amount_sum=Sum('recipe__recipe_ingredients__amount'))
     except ShoppingCart.DoesNotExist:
         return Response({'errors': 'Корзина пуста'},
                         status.HTTP_400_BAD_REQUEST)
-    # уверен, можно оптимизировать без строк
+    # уверен, можно оптимизировать, не используя строки
     ingredients = 'Список покупок: \n'
     for item in query_list:
         ingredients += (

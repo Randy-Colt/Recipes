@@ -2,6 +2,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from foodgram.settings import SITE_URL
+from recipes.constants import MIN_AMOUNT
 from recipes.models import (
     Favorite, Ingredient, IngredientRecipe, Recipe, ShoppingCart, Tag)
 from users.serializers import UserSerializer
@@ -66,11 +67,11 @@ class IngredientRecipeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = IngredientRecipe
         fields = ('id', 'amount')
-# TODO: заменить на константы
+
     def validate_amount(self, value):
-        if value < 1:
+        if value < MIN_AMOUNT:
             raise serializers.ValidationError(
-                'Убедитесь, что это значение больше либо равно 1'
+                f'Убедитесь, что это значение больше либо равно {MIN_AMOUNT}'
             )
         return value
 
@@ -84,6 +85,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         exclude = ('author', 'pub_date')
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Ни одного файла не было отправлено.')
+        return value
 
     def validate(self, attrs):
         ingredients = attrs.get('ingredients', False)

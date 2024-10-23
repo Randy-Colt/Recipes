@@ -1,5 +1,5 @@
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers, status
+from rest_framework import serializers
 
 from api.minirecipe import MiniRecipeSerializer
 from foodgram.settings import SITE_URL
@@ -50,7 +50,7 @@ class SubscriptionSerializer(UserSerializer):
             'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
-        limit = self.context.get('request').query_params.get('recipes_count')
+        limit = self.context.get('request').query_params.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]

@@ -1,14 +1,14 @@
-from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
-from recipes.constants import MAX_AMOUNT, MIN_TIME, MIN_AMOUNT, LENGHT
+from recipes.constants import LENGHT, MAX_AMOUNT, MIN_AMOUNT, MIN_TIME
 
 User = get_user_model()
 
 
 class Ingredient(models.Model):
-    name = models.CharField('Название', max_length=128)
+    name = models.CharField('Название', max_length=128, unique=True)
     measurement_unit = models.CharField('Единица измерения', max_length=64)
 
     class Meta:
@@ -34,7 +34,7 @@ class Tag(models.Model):
 def image_directory_path(instance, filename):
     extension = filename.split('.')[-1]
     filename = '{}.{}'.format(instance.name, extension)
-    return "recipes/images/{}__{}".format(instance.author.username, filename)
+    return 'recipes/images/{}__{}'.format(instance.author.username, filename)
 
 
 class Recipe(models.Model):
@@ -143,12 +143,13 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='favorites',
-        verbose_name='Пользователь',
+        verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт',
+        related_name='favorites',
+        verbose_name='Рецепт'
     )
 
     class Meta:

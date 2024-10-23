@@ -2,12 +2,12 @@ import os
 from random import choices
 
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.db.utils import IntegrityError
-from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 
 from recipes.constants import CHARACTERS, LENGHT
-from recipes.models import ShortLinkConverter, Recipe
+from recipes.models import Recipe, ShortLinkConverter
 
 
 User = get_user_model()
@@ -24,6 +24,7 @@ def create_converter(sender, instance, created, **kwargs):
                 break
             except IntegrityError:
                 continue
+
 
 @receiver(pre_save, sender=User)
 @receiver(pre_save, sender=Recipe)
@@ -47,6 +48,7 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     if old_file:
         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
+
 
 @receiver(post_delete, sender=User)
 @receiver(post_delete, sender=Recipe)
