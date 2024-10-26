@@ -107,4 +107,4 @@ def redirect_short_link(request, short_link):
     """Перенаправить на url рецепта."""
     link_obj = get_object_or_404(
         ShortLinkConverter, short_link=short_link)
-    return redirect('recipe-detail', f'{link_obj.recipe.pk}',  permanent=True)
+    return redirect('recipe-detail', f'{link_obj.recipe.pk}', permanent=True)

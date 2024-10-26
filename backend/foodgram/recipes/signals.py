@@ -29,9 +29,9 @@ def create_converter(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=User)
 @receiver(pre_save, sender=Recipe)
 def auto_delete_file_on_change(sender, instance, **kwargs):
-    """
-    Удаляет старый файл изображения из файловой системы,
-    если изображение рецепта или аватар пользователя изменено.
+    """Автоудаление старого изображения из файловой системы.
+
+    Срабатывает, если изображение рецепта или аватар пользователя изменены.
     """
     if not instance.pk:
         return False
@@ -53,9 +53,9 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
 @receiver(post_delete, sender=User)
 @receiver(post_delete, sender=Recipe)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Удаляет файл изображения из файловой системы,
-    если удалён рецепт или пользователь.
+    """Автоудаление изображения из файловой системы.
+
+    Срабатывает, если удалён рецепт или пользователь.
     """
     file = instance.avatar if sender.__name__ == 'User' else instance.image
     if file:

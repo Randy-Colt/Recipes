@@ -59,7 +59,8 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(Tag, verbose_name='Тег')
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления',
-        validators=[MinValueValidator(
+        validators=[
+            MinValueValidator(
                 MIN_TIME,
                 f'Время приготовления не должно быть меньше {MIN_TIME}'
             )

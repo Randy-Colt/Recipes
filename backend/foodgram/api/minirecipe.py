@@ -3,6 +3,7 @@ from rest_framework import serializers
 from foodgram.settings import SITE_URL
 from recipes.models import Recipe
 
+
 class MiniRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:

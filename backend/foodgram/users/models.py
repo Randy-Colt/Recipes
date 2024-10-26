@@ -26,6 +26,9 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    def __str__(self):
+        return f'{self.username}, email: {self.email}'
+
 
 class Subscription(models.Model):
     user = models.ForeignKey(
@@ -38,6 +41,8 @@ class Subscription(models.Model):
         on_delete=models.CASCADE)
 
     class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'author'),
