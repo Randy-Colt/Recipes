@@ -17,8 +17,8 @@ services:
 
   backend:
     container_name: foodgram-backend
-    # image: randycolt/foodgram_backend
-    build: ../backend
+    image: randycolt/foodgram_backend
+    # build: ../backend
     env_file: .env
     volumes:
       - static:/app/collected_static
@@ -28,8 +28,8 @@ services:
 
   frontend:
     container_name: foodgram-frontend
-    # image: randycolt/foodgram_frontend
-    build: ../frontend
+    image: randycolt/foodgram_frontend
+    # build: ../frontend
     command: cp -r /app/build/. /result_build/
     volumes:
       - frontend:/result_build
