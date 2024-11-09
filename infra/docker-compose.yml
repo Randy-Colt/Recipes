@@ -37,7 +37,7 @@ services:
   nginx:
     container_name: foodgram-proxy
     # image: nginx:1.25.4-alpine
-    build: randycolt/foodgram-proxy
+    image: randycolt/foodgram-gateway
     ports:
       - "8000:80"
     depends_on:
