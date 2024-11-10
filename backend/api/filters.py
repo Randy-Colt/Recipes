@@ -10,12 +10,10 @@ class IngredientFilter(filters.FilterSet):
         model = Ingredient
         fields = 'name',
 
-#  двойная фильтрация: результат сортируется от вхождений в начале до
-#  вхождений в произвольном месте
     def filter_name(self, queryset, name, value):
         starts = queryset.filter(name__istartswith=value)
-        contains = queryset.filter(name__icontains=value)\
-            .exclude(name__istartswith=value)
+        contains = queryset.filter(
+            name__icontains=value).exclude(name__istartswith=value)
         return starts.union(contains, all=True)
 
 

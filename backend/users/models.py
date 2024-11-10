@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from recipes.constants import FIRST_NAME, LAST_NAME
+
 
 def avatar_directory_path(instance, filename):
     extension = filename.split('.')[-1]
@@ -8,8 +10,8 @@ def avatar_directory_path(instance, filename):
 
 
 class User(AbstractUser):
-    first_name = models.CharField('Имя', max_length=150)
-    last_name = models.CharField('Фамилия', max_length=150)
+    first_name = models.CharField('Имя', max_length=FIRST_NAME)
+    last_name = models.CharField('Фамилия', max_length=LAST_NAME)
     email = models.EmailField('Email', unique=True)
     avatar = models.ImageField('Аватар',
                                upload_to=avatar_directory_path,
@@ -25,6 +27,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = 'username',
 
     def __str__(self):
         return f'{self.username}, email: {self.email}'
@@ -43,6 +46,7 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        ordering = ('user', 'author')
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'author'),

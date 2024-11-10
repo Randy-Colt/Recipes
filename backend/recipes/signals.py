@@ -6,7 +6,7 @@ from django.db.models.signals import post_delete, post_save, pre_save
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
 
-from recipes.constants import CHARACTERS, LENGHT
+from recipes.constants import CHARACTERS, LENGTH
 from recipes.models import Recipe, ShortLinkConverter
 
 
@@ -18,7 +18,7 @@ def create_converter(sender, instance, created, **kwargs):
     if created:
         while True:
             try:
-                short_link = ''.join(choices(CHARACTERS, k=LENGHT))
+                short_link = ''.join(choices(CHARACTERS, k=LENGTH))
                 ShortLinkConverter.objects.create(
                     recipe=instance, short_link=short_link)
                 break

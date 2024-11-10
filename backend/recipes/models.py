@@ -2,30 +2,34 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from recipes.constants import LENGHT, MAX_AMOUNT, MIN_AMOUNT, MIN_TIME
+from recipes import constants as const
 
 User = get_user_model()
 
 
 class Ingredient(models.Model):
-    name = models.CharField('Название', max_length=128, unique=True)
-    measurement_unit = models.CharField('Единица измерения', max_length=64)
+    name = models.CharField(
+        'Название', max_length=const.NAME_INGREDIENT, unique=True)
+    measurement_unit = models.CharField(
+        'Единица измерения', max_length=const.MEASURE_MAX)
 
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        ordering = 'name',
 
     def __str__(self):
         return f'{self.name}, ед. измерения - {self.measurement_unit}'
 
 
 class Tag(models.Model):
-    name = models.CharField('Название', max_length=32, unique=True)
-    slug = models.SlugField('Слаг', max_length=32, unique=True)
+    name = models.CharField('Название', max_length=const.NAME_TAG, unique=True)
+    slug = models.SlugField('Слаг', max_length=const.SLUG_TAG, unique=True)
 
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        ordering = 'name',
 
     def __str__(self):
         return self.name
@@ -44,7 +48,7 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Автор'
     )
-    name = models.CharField('Название', max_length=100)
+    name = models.CharField('Название', max_length=const.NAME_RECIPE)
     image = models.ImageField(
         'Изображение',
         upload_to=image_directory_path
@@ -61,8 +65,12 @@ class Recipe(models.Model):
         'Время приготовления',
         validators=[
             MinValueValidator(
-                MIN_TIME,
-                f'Время приготовления не должно быть меньше {MIN_TIME}'
+                const.MIN_TIME,
+                f'Время приготовления не должно быть меньше {const.MIN_TIME}'
+            ),
+            MaxValueValidator(
+                const.MAX_TIME,
+                f'Время приготовления не должно быть меньше {const.MAX_TIME}'
             )
         ]
     )
@@ -85,7 +93,7 @@ class ShortLinkConverter(models.Model):
         verbose_name='Рецепт')
     short_link = models.CharField(
         'Короткая ссылка',
-        max_length=LENGHT,
+        max_length=const.LENGTH,
         db_index=True,
         unique=True,
         editable=False
@@ -94,6 +102,7 @@ class ShortLinkConverter(models.Model):
     class Meta:
         verbose_name = 'Конвентатор коротких ссылок'
         verbose_name_plural = 'Конвентаторы коротких ссылок'
+        ordering = 'recipe',
 
     def __str__(self):
         return f'{self.recipe.name} -> {self.short_link}'
@@ -116,15 +125,20 @@ class IngredientRecipe(models.Model):
         'Количество',
         validators=[
             MinValueValidator(
-                MIN_AMOUNT, f'Количество не может быть меньше {MIN_AMOUNT}'),
+                const.MIN_AMOUNT,
+                f'Количество не может быть меньше {const.MIN_AMOUNT}'
+            ),
             MaxValueValidator(
-                MAX_AMOUNT, f'Количество не может быть больше {MAX_AMOUNT}')
+                const.MAX_AMOUNT,
+                f'Количество не может быть больше {const.MAX_AMOUNT}'
+            )
         ]
     )
 
     class Meta:
         verbose_name = 'Ингредиенты рецепта'
         verbose_name_plural = 'Ингредиенты рецептов'
+        ordering = 'recipe',
         constraints = [
             models.UniqueConstraint(
                 fields=('recipe', 'ingredients'),
@@ -156,6 +170,7 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
+        ordering = ('user', 'recipe')
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
@@ -184,6 +199,7 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        ordering = ('user', 'recipe')
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe'),

@@ -2,9 +2,8 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from foodgram.settings import SITE_URL
-from recipes.constants import MIN_AMOUNT
-from recipes.models import (
-    Favorite, Ingredient, IngredientRecipe, Recipe, ShoppingCart, Tag)
+from recipes.constants import MAX_AMOUNT, MAX_TIME, MIN_AMOUNT, MIN_TIME
+from recipes.models import Ingredient, IngredientRecipe, Recipe, Tag
 from users.serializers import UserSerializer
 
 
@@ -46,15 +45,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         exclude = 'pub_date',
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user.is_authenticated:
-            return Favorite.objects.filter(user=user, recipe=obj).exists()
+            return user.favorites.exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user.is_authenticated:
-            return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+            return user.shopping_list.exists()
         return False
 
 
@@ -62,18 +61,12 @@ class IngredientRecipeCreateSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all()
     )
-    amount = serializers.IntegerField(write_only=True)
+    amount = serializers.IntegerField(
+        write_only=True, max_value=MAX_AMOUNT, min_value=MIN_AMOUNT)
 
     class Meta:
         model = IngredientRecipe
         fields = ('id', 'amount')
-
-    def validate_amount(self, value):
-        if value < MIN_AMOUNT:
-            raise serializers.ValidationError(
-                f'Убедитесь, что это значение больше либо равно {MIN_AMOUNT}'
-            )
-        return value
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -81,6 +74,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True)
     image = Base64ImageField()
+    cooking_time = serializers.IntegerField(
+        max_value=MAX_TIME, min_value=MIN_TIME)
 
     class Meta:
         model = Recipe
@@ -96,7 +91,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients = attrs.get('ingredients', False)
         if not ingredients:
             raise serializers.ValidationError(
-                'Убедитесь, что добавили ингридиент.')
+                'Убедитесь, что добавили ингредиент.')
         tags = attrs.get('tags', False)
         if not tags:
             raise serializers.ValidationError('Убедитесь, что добавили тег.')
@@ -104,7 +99,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients_ids = [ingredient['id'] for ingredient in ingredients]
         if len(ingredients_ids) != len(set(ingredients_ids)):
             raise serializers.ValidationError(
-                'Убедитесь, что ингридиенты не повторяются.')
+                'Убедитесь, что ингредиенты не повторяются.')
 
         if len(tags) != len(set(tags)):
             raise serializers.ValidationError(

@@ -17,9 +17,9 @@ class UserSerializer(serializers.ModelSerializer):
             'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return user.is_authenticated and Subscription.objects.filter(
-            user=user, author=obj).exists()
+        user = self.context['request'].user
+        return user.is_authenticated and user.authors.filter(
+            author=obj).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -50,7 +50,7 @@ class SubscriptionSerializer(UserSerializer):
             'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
-        limit = self.context.get('request').query_params.get('recipes_limit')
+        limit = self.context['request'].query_params.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]

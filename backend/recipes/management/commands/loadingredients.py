@@ -10,7 +10,7 @@ FILE_DIR = settings.BASE_DIR / 'data/ingredients.csv'
 
 
 class Command(BaseCommand):
-    help = 'Загружает ингридиенты из файла CSV в базу данных'
+    help = 'Загружает ингредиенты из файла CSV в базу данных'
 
     def handle(self, *args, **options):
         with open(FILE_DIR, encoding='utf-8') as file:

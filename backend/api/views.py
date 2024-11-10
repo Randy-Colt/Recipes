@@ -8,7 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
-from api.favorite_shopping_cart import post_or_delete
+from api.favorite_shopping_cart import delete_from_list, post_in_list
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
@@ -41,12 +41,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        queryset = Recipe.objects.select_related('author')\
-            .prefetch_related(
-            'recipe_ingredients__ingredients', 'tags'
-        )
-
-        return queryset
+        return Recipe.objects.select_related('author').prefetch_related(
+            'recipe_ingredients__ingredients', 'tags')
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -67,34 +63,37 @@ class RecipeViewSet(viewsets.ModelViewSet):
             methods=('post', 'delete'),
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
-        return post_or_delete(self.get_object(), request, pk, Favorite)
+        if request.method == 'DELETE':
+            return delete_from_list(pk, Favorite)
+        return post_in_list(self.get_object(), request, Favorite)
 
     @action(detail=True,
             methods=('post', 'delete'),
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
-        return post_or_delete(self.get_object(), request, pk, ShoppingCart)
-
+        if request.method == 'DELETE':
+            return delete_from_list(pk, ShoppingCart)
+        return post_in_list(self.get_object(), request, ShoppingCart)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_shopping_cart(request):
     try:
-        query_list = request.user.shopping_list\
-            .values('recipe__ingredients__name',
-                    'recipe__ingredients__measurement_unit')\
-            .annotate(amount_sum=Sum('recipe__recipe_ingredients__amount'))
+        query_list = request.user.shopping_list.values(
+            'recipe__ingredients__name',
+            'recipe__ingredients__measurement_unit'
+        ).annotate(amount_sum=Sum('recipe__recipe_ingredients__amount'))
     except ShoppingCart.DoesNotExist:
         return Response({'errors': 'Корзина пуста'},
                         status.HTTP_400_BAD_REQUEST)
-    # уверен, можно оптимизировать, не используя строки
-    ingredients = 'Список покупок: \n'
+    ingredients = ['Список покупок:']
     for item in query_list:
-        ingredients += (
+        ingredients.append(
             f'{item["recipe__ingredients__name"]} - '
             f'{item["amount_sum"]} '
-            f'{item["recipe__ingredients__measurement_unit"]}\n'
+            f'{item["recipe__ingredients__measurement_unit"]}'
         )
+    ingredients = '\n'.join(ingredients)
     filename = 'shopping_list.txt'
     response = HttpResponse(ingredients, content_type='text/plain')
     response['Content-Disposition'] = f'attachment; filename={filename}'
