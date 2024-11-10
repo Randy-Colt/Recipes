@@ -75,6 +75,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return delete_from_list(pk, ShoppingCart)
         return post_in_list(self.get_object(), request, ShoppingCart)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_shopping_cart(request):

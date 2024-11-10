@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from api.minirecipe import MiniRecipeSerializer
 from foodgram.settings import SITE_URL
-from users.models import Subscription, User
+from users.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
