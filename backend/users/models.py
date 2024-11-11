@@ -6,7 +6,7 @@ from recipes.constants import FIRST_NAME, LAST_NAME
 
 def avatar_directory_path(instance, filename):
     extension = filename.split('.')[-1]
-    return "users/{}.{}".format(instance.username, extension)
+    return 'users/{}.{}'.format(instance.username, extension)
 
 
 class User(AbstractUser):

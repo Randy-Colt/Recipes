@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from api.minirecipe import MiniRecipeSerializer
 
 
-def post_in_list(instance, request, model):
+def post(instance, request, model):
     """
     Функция для добавления в корзину покупок или избранное.
 
@@ -21,7 +21,7 @@ def post_in_list(instance, request, model):
             status=status.HTTP_400_BAD_REQUEST)
 
 
-def delete_from_list(pk, model):
+def delete(pk, model):
     """
     Функция для удаления из корзины покупок или избранного.
 

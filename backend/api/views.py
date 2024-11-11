@@ -8,7 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
-from api.favorite_shopping_cart import delete_from_list, post_in_list
+from api.favorite_shopping_cart import delete, post
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
@@ -64,16 +64,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
         if request.method == 'DELETE':
-            return delete_from_list(pk, Favorite)
-        return post_in_list(self.get_object(), request, Favorite)
+            return delete(pk, Favorite)
+        return post(self.get_object(), request, Favorite)
 
     @action(detail=True,
             methods=('post', 'delete'),
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
         if request.method == 'DELETE':
-            return delete_from_list(pk, ShoppingCart)
-        return post_in_list(self.get_object(), request, ShoppingCart)
+            return delete(pk, ShoppingCart)
+        return post(self.get_object(), request, ShoppingCart)
 
 
 @api_view(['GET'])

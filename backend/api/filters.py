@@ -4,17 +4,17 @@ from recipes.models import Ingredient, Recipe, Tag
 
 
 class IngredientFilter(filters.FilterSet):
-    name = filters.CharFilter(method='filter_name')
+    name = filters.CharFilter(lookup_expr='istartswith')
 
     class Meta:
         model = Ingredient
         fields = 'name',
 
-    def filter_name(self, queryset, name, value):
-        starts = queryset.filter(name__istartswith=value)
-        contains = queryset.filter(
-            name__icontains=value).exclude(name__istartswith=value)
-        return starts.union(contains, all=True)
+    # def filter_name(self, queryset, name, value):
+    #     starts = queryset.filter(name__istartswith=value)
+    #     contains = queryset.filter(
+    #         name__icontains=value).exclude(name__istartswith=value)
+    #     return starts.union(contains, all=True)
 
 
 class RecipeFilter(filters.FilterSet):
