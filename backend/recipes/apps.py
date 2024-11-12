@@ -9,6 +9,5 @@ class RecipesConfig(AppConfig):
 
     def ready(self):
         from recipes import signals
-        # request_finished.connect(signals.create_converter)
-        # request_finished.connect(signals.auto_delete_file_on_change)
-        # request_finished.connect(signals.auto_delete_file_on_delete)
+        request_finished.connect(signals.create_converter)
+        request_finished.connect(signals.auto_delete_file_on_delete)
