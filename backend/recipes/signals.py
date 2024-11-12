@@ -26,28 +26,28 @@ def create_converter(sender, instance, created, **kwargs):
                 continue
 
 
-@receiver(pre_save, sender=User)
-@receiver(pre_save, sender=Recipe)
-def auto_delete_file_on_change(sender, instance, **kwargs):
-    """Автоудаление старого изображения из файловой системы.
+# @receiver(pre_save, sender=User)
+# @receiver(pre_save, sender=Recipe)
+# def auto_delete_file_on_change(sender, instance, **kwargs):
+#     """Автоудаление старого изображения из файловой системы.
 
-    Срабатывает, если изображение рецепта или аватар пользователя изменены.
-    """
-    if not instance.pk:
-        return False
-    new_file = instance.avatar if sender.__name__ == 'User' else instance.image
-    if not new_file:
-        return False
-    try:
-        if sender.__name__ == 'User':
-            old_file = sender.objects.get(pk=instance.pk).avatar
-        else:
-            old_file = sender.objects.get(pk=instance.pk).image
-    except sender.DoesNotExist:
-        return False
-    if old_file:
-        if os.path.isfile(old_file.path):
-            os.remove(old_file.path)
+#     Срабатывает, если изображение рецепта или аватар пользователя изменены.
+#     """
+#     if not instance.pk:
+#         return False
+#     new_file = instance.avatar if sender.__name__ == 'User' else instance.image
+#     if not new_file:
+#         return False
+#     try:
+#         if sender.__name__ == 'User':
+#             old_file = sender.objects.get(pk=instance.pk).avatar
+#         else:
+#             old_file = sender.objects.get(pk=instance.pk).image
+#     except sender.DoesNotExist:
+#         return False
+#     if old_file:
+#         if os.path.isfile(old_file.path):
+#             os.remove(old_file.path)
 
 
 @receiver(post_delete, sender=User)
